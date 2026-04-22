@@ -1,0 +1,132 @@
+---
+title: "Configure Confluence and Jira authentication in cme"
+description: "Add Confluence and Jira API credentials to cme using API tokens, Personal Access Tokens, or scoped tokens with Cloud ID routing for fine-grained access control."
+---
+
+`cme` stores credentials per instance URL so you can work with multiple Confluence or Jira instances at the same time. Credentials live in the `auth.confluence` and `auth.jira` sections of the config file, keyed by the instance base URL.
+
+<Note>
+  Because auth keys contain a URL (for example, `auth.confluence["https://company.atlassian.net"]`), they cannot be set with `cme config set`. Use `cme config edit auth.confluence` to add or update credentials through the interactive editor, which handles URL-based keys correctly.
+</Note>
+
+---
+
+## Set up Confluence credentials
+
+<Steps>
+  <Step title="Open the interactive editor">
+    Run the following command to open the credential editor for Confluence:
+
+    ```bash
+    cme config edit auth.confluence
+    ```
+
+    This launches the interactive menu pre-navigated to the Confluence auth section.
+  </Step>
+
+  <Step title="Choose your authentication method">
+    Select whether you are connecting to Atlassian Cloud or a self-hosted Server / Data Center instance. The required fields differ between the two.
+
+    <Tabs>
+      <Tab title="Cloud (API token)">
+        Enter the following fields when prompted:
+
+        | Field | Value |
+        |---|---|
+        | **url** | Your Confluence Cloud URL, e.g. `https://company.atlassian.net` |
+        | **username** | Your Atlassian account email address |
+        | **api_token** | Your Atlassian API token |
+        | **cloud_id** | Leave blank — fetched automatically on first connection |
+
+        Generate an API token at [id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens). In Confluence or Jira you can reach this via your profile picture in the upper-right corner → **Account Settings** → **Security** → **Create and manage API tokens**.
+      </Tab>
+      <Tab title="Server / Data Center (PAT)">
+        Enter the following fields when prompted:
+
+        | Field | Value |
+        |---|---|
+        | **url** | Your Confluence Server URL, e.g. `https://wiki.company.com` |
+        | **username** | Leave blank when using a PAT |
+        | **pat** | Your Personal Access Token |
+        | **cloud_id** | Leave blank — only applicable to Cloud |
+
+        Generate a PAT from your Confluence profile: **Profile** → **Settings** → **Personal Access Tokens**.
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Verify the connection">
+    Run a test export to confirm your credentials work:
+
+    ```bash
+    cme pages <your-confluence-page-url>
+    ```
+
+    If authentication succeeds, the export will begin. If you see an authentication error, re-run `cme config edit auth.confluence` to correct the credentials.
+  </Step>
+</Steps>
+
+---
+
+## Set up Jira credentials
+
+Jira auth follows the same structure as Confluence. Run:
+
+```bash
+cme config edit auth.jira
+```
+
+Enter your Jira instance URL, username, and API token (or PAT for Server/Data Center). Once configured, Jira enrichment is enabled automatically when `export.enable_jira_enrichment` is `true` — Jira issue links in exported pages will include the issue summary.
+
+---
+
+## Scoped API tokens
+
+Scoped API tokens route requests through the Atlassian API gateway (`https://api.atlassian.com`) instead of your instance URL directly. They require **classic scopes** to be selected when creating the token.
+
+The following scopes have been tested and provide full read-only access:
+
+```text
+read:confluence-content.all
+read:account
+read:confluence-content.permission
+read:confluence-content.summary
+read:confluence-groups
+read:confluence-props
+read:confluence-space.summary
+read:confluence-user
+read:me
+readonly:content.attachment:confluence
+search:confluence
+```
+
+When you use a scoped token, set the `cloud_id` field in `auth.confluence` to route API calls through the gateway. For Atlassian Cloud instances (`.atlassian.net`), the Cloud ID is fetched and stored **automatically** on the first successful connection. You can also set it manually — see [How to retrieve your Atlassian Cloud ID](https://support.atlassian.com/jira/kb/retrieve-my-atlassian-sites-cloud-id/).
+
+<Tip>
+  If you have already connected to a Cloud instance, your Cloud ID is already stored. Run `cme config get auth.confluence` to inspect the stored values.
+</Tip>
+
+---
+
+## Auth fields reference
+
+Both `auth.confluence` and `auth.jira` accept the same set of fields per instance:
+
+| Field | Description | Required |
+|---|---|---|
+| `url` | Instance base URL (used as the storage key) | Yes |
+| `username` | Email address for the account | Cloud only |
+| `api_token` | Atlassian API token | Cloud only |
+| `pat` | Personal Access Token | Server/DC only |
+| `cloud_id` | Atlassian Cloud ID for scoped token routing | Auto-fetched for Cloud |
+
+---
+
+## View current auth config
+
+```bash
+cme config get auth.confluence
+cme config get auth.jira
+```
+
+Nested sections are printed as YAML. Note that secret values (tokens, PATs) are shown in plaintext.

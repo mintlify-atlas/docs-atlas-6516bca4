@@ -1,0 +1,131 @@
+---
+title: "Write and run tests for Confluence Markdown Exporter"
+description: "Run the pytest test suite, write new tests for cme, and understand the testing conventions and CI pipeline for Confluence Markdown Exporter."
+---
+
+Confluence Markdown Exporter uses [pytest](https://docs.pytest.org/) for its test suite. Tests live in the `tests/` directory and follow a straightforward naming convention. This page covers how to run tests, how to write new ones, and what the CI pipeline checks before a release.
+
+## Running tests
+
+<Steps>
+  <Step title="Run the full test suite">
+    From the project root, run:
+
+    ```bash
+    uv run pytest
+    ```
+
+    <Tip>Add the `-v` flag for verbose output that shows each test name and its result as the suite runs.</Tip>
+  </Step>
+
+  <Step title="Run a specific file or test">
+    Target a single test file or an individual test function:
+
+    ```bash
+    # Run a specific file
+    uv run pytest tests/test_basic.py
+
+    # Run a specific test function
+    uv run pytest tests/test_basic.py::test_package_imports
+    ```
+  </Step>
+</Steps>
+
+### All test commands
+
+```bash
+# Run all tests
+uv run pytest
+
+# Verbose output
+uv run pytest -v
+
+# Specific file
+uv run pytest tests/test_basic.py
+
+# Specific test
+uv run pytest tests/test_basic.py::test_package_imports
+```
+
+## Writing tests
+
+Follow these conventions when adding new tests:
+
+1. Create test files in the `tests/` directory with a `test_` prefix (e.g., `tests/test_export.py`)
+2. Name all test functions starting with `test_` (e.g., `test_page_export_succeeds`)
+3. Use descriptive names that explain what behavior is being verified
+4. Add docstrings to explain complex or non-obvious test scenarios
+
+### Example test structure
+
+Use the Arrange–Act–Assert pattern to keep tests readable and structured:
+
+```python
+def test_feature_description() -> None:
+    """Test that the feature works as expected."""
+    # Arrange
+    input_data = "test input"
+
+    # Act
+    result = function_under_test(input_data)
+
+    # Assert
+    assert result == expected_output
+```
+
+<Note>
+  Ruff ignores rules `S101` (assert statements), `S110` (try-except-pass), `FBT001` (boolean trap), and `PLR2004` (magic values) in all `tests/**/*.py` files. You can safely use `assert` statements and numeric literals in tests without triggering linting errors.
+</Note>
+
+## CI pipeline
+
+Every push and pull request triggers the CI pipeline via GitHub Actions. The pipeline runs:
+
+1. **Ruff check** — linting must pass with no errors
+2. **pytest** — all tests must pass
+3. **Build** — the package must build successfully
+
+### Release workflow
+
+Releases are triggered manually by maintainers. The workflow accepts a version bump type (`patch`, `minor`, or `major`) or a custom version string, then:
+
+1. Updates the version in `pyproject.toml`
+2. Runs tests and builds the package
+3. Creates a Git tag
+4. Publishes the package to PyPI
+5. Creates a GitHub release with auto-generated notes
+
+## Build verification before submitting a PR
+
+Before opening a pull request, verify that linting, tests, and the package build all succeed locally:
+
+<Steps>
+  <Step title="Check linting">
+    ```bash
+    uv run ruff check
+    ```
+  </Step>
+
+  <Step title="Run the test suite">
+    ```bash
+    uv run pytest
+    ```
+  </Step>
+
+  <Step title="Verify the build">
+    ```bash
+    uv build --no-sources
+    ```
+
+    If the build succeeds without errors, your changes are ready to submit.
+  </Step>
+</Steps>
+
+## Recommended VS Code extensions
+
+These extensions improve the development experience for this project:
+
+- **Python** (Microsoft) — language support and IntelliSense
+- **Ruff** (Astral Software) — inline linting and auto-fix on save
+- **GitLens** (GitKraken) — enhanced Git history and blame annotations
+- **markdownlint** (David Anson) — lint Markdown files in the repository

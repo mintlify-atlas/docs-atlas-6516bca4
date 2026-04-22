@@ -1,0 +1,90 @@
+---
+title: "Install Confluence Markdown Exporter on your system"
+description: "Install cme via the one-line installer script, pip, or uvx on macOS, Linux, or Windows. Includes pinning to a specific version and update instructions."
+---
+
+`cme` can be installed using a one-line installer script (recommended), `pip`, or `uvx`. The installer script bundles everything you need and also serves as the update command — re-run it at any time to upgrade to the latest release.
+
+<Steps>
+  <Step title="Install cme">
+    Choose your platform and run the installer. The script downloads and installs the latest version automatically.
+
+    <Tabs>
+      <Tab title="macOS / Linux">
+        ```bash
+        curl -LsSf uvx.sh/confluence-markdown-exporter/install.sh | sh
+        ```
+      </Tab>
+      <Tab title="Windows">
+        ```powershell
+        powershell -ExecutionPolicy ByPass -c "irm https://uvx.sh/confluence-markdown-exporter/install.ps1 | iex"
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Verify the installation">
+    After installing, confirm that `cme` is available on your PATH:
+
+    ```bash
+    cme --help
+    ```
+
+    To check which version is installed:
+
+    ```bash
+    cme version
+    ```
+  </Step>
+</Steps>
+
+## Alternative install methods
+
+If you prefer to manage the installation yourself, `cme` is published on PyPI as `confluence-markdown-exporter`.
+
+<CodeGroup>
+
+```bash pip
+pip install confluence-markdown-exporter
+```
+
+```bash uvx (run without installing)
+uvx confluence-markdown-exporter --help
+```
+
+</CodeGroup>
+
+<Note>
+  The `uvx` method runs the tool in an isolated environment without a permanent installation. Use the installer script or `pip` if you want `cme` available globally on your PATH.
+</Note>
+
+## Install a specific version
+
+To pin to a specific release, pass the version in the installer URL:
+
+```bash
+curl -LsSf uvx.sh/confluence-markdown-exporter/4.0.8/install.sh | sh
+```
+
+Replace `4.0.8` with the version you want. Available versions are listed on [PyPI](https://pypi.org/project/confluence-markdown-exporter/#history).
+
+## Update
+
+Re-run the same installer command to update to the latest release:
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    curl -LsSf uvx.sh/confluence-markdown-exporter/install.sh | sh
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```powershell
+    powershell -ExecutionPolicy ByPass -c "irm https://uvx.sh/confluence-markdown-exporter/install.ps1 | iex"
+    ```
+  </Tab>
+</Tabs>
+
+## Next steps
+
+Once installed, head to the [Quickstart](/quickstart) to configure your credentials and run your first export.

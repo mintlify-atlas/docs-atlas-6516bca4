@@ -1,0 +1,157 @@
+---
+title: "Set up a Confluence Markdown Exporter dev environment"
+description: "Fork, clone, and configure a local development environment for Confluence Markdown Exporter using uv, Python 3.10+, and Ruff for linting."
+---
+
+Contributing to Confluence Markdown Exporter requires a Python environment managed by `uv`. This guide walks you through installing the required tools, cloning the repository, and verifying your setup so you can start making changes right away.
+
+## Prerequisites
+
+Before you begin, make sure you have the following installed:
+
+- **Python 3.10+** — required by the project
+- **Git** — for cloning and version control
+- **uv** — the Python package manager used for this project
+- **jq** — used for JSON processing in development scripts
+
+## Set up your environment
+
+<Steps>
+  <Step title="Install uv and jq">
+    Install `uv` using the official installer script:
+
+    ```bash
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+    Optionally, add shell completion for `uv`:
+
+    ```bash
+    echo 'eval "$(uv generate-shell-completion bash)"' >> ~/.bashrc
+    ```
+
+    Install `jq` via your package manager:
+
+    ```bash
+    sudo apt-get install jq
+    ```
+  </Step>
+
+  <Step title="Fork and clone the repository">
+    Fork the repository on GitHub, then clone your fork locally:
+
+    ```bash
+    git clone https://github.com/Spenhouet/confluence-markdown-exporter.git
+    cd confluence-markdown-exporter
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Run the following command to set up the project:
+
+    ```bash
+    uv sync --all-groups
+    ```
+
+    This command creates a virtual environment, installs all dependencies (including dev groups), and installs the project in editable mode so your local changes are immediately reflected.
+  </Step>
+
+  <Step title="Verify the installation">
+    Confirm the CLI is working:
+
+    ```bash
+    uv run cme --help
+    uv run confluence-markdown-exporter --help
+    ```
+
+    If both commands print the help output, your environment is ready.
+  </Step>
+</Steps>
+
+## Running the application
+
+You can run the application directly with `uv run` (recommended) or by activating the virtual environment first:
+
+```bash
+# Recommended
+uv run cme [commands]
+uv run confluence-markdown-exporter [commands]
+
+# Or activate the virtual environment
+source .venv/bin/activate
+cme [commands]
+```
+
+## Managing dependencies
+
+Use `uv` to add, remove, or update dependencies:
+
+```bash
+# Add a runtime dependency
+uv add package-name
+
+# Add a development dependency
+uv add --group dev package-name
+
+# Update all dependencies
+uv sync --upgrade
+
+# Update a specific package
+uv sync --upgrade-package package-name
+```
+
+## Project structure
+
+```text
+confluence-markdown-exporter/
+├── .github/workflows/           # CI/CD workflows
+├── confluence_markdown_exporter/ # Main package
+│   ├── __init__.py
+│   ├── main.py                  # CLI entry point (typer)
+│   ├── confluence.py            # Core export logic
+│   ├── api_clients.py           # Atlassian API clients
+│   └── utils/                   # Utility modules
+├── tests/                       # Test suite
+├── pyproject.toml               # Project config, deps, ruff config
+└── uv.lock                      # Dependency lock file
+```
+
+## Code style
+
+This project uses [Ruff](https://docs.astral.sh/ruff/) for linting and formatting. Run the following commands to check and fix your code:
+
+```bash
+# Check all files
+uv run ruff check
+
+# Auto-fix issues where possible
+uv run ruff check --fix
+
+# Check a specific directory
+uv run ruff check confluence_markdown_exporter/
+```
+
+Key style rules enforced by the project configuration:
+
+- Maximum line length of 100 characters
+- Google docstring convention
+- One import per line
+- Type annotations required for new code
+
+## Pre-commit checklist
+
+Before committing your changes, run through this checklist:
+
+1. `uv run ruff check` — ensure linting passes
+2. `uv run pytest` — ensure all tests pass
+3. Fix any issues before committing
+
+## Pull request requirements
+
+When you open a pull request, make sure it meets these criteria:
+
+- All tests pass (verified by CI)
+- Code passes ruff linting
+- PR title and description are descriptive
+- Related issues are referenced
+- New functionality includes updated tests

@@ -1,0 +1,101 @@
+---
+title: "All Confluence elements converted to Markdown by cme"
+description: "Complete reference of every element cme converts — headings, tables, code blocks, diagrams, tasks, alerts, front matter, and Marketplace add-on support."
+---
+
+cme converts Confluence storage-format XML into Markdown by parsing each element and mapping it to the closest Markdown equivalent. For elements that have no direct Markdown counterpart, cme uses extended syntax (alerts, task lists, YAML front matter) or passes content through as-is. The sections below cover every supported element category.
+
+## Text and structure
+
+| Confluence element | Markdown output |
+|--------------------|-----------------|
+| Heading 1–6 | `# H1` through `###### H6` |
+| Paragraph | Blank-line-separated paragraph |
+| **Bold** | `**bold**` |
+| *Italic* | `*italic*` |
+| <u>Underline</u> | `<u>underline</u>` |
+| Ordered list | `1.` `2.` `3.` … |
+| Unordered list | `- item` |
+| Table | Markdown pipe table |
+| Link | `[text](url)` |
+
+## Media and attachments
+
+| Confluence element | Markdown output |
+|--------------------|-----------------|
+| Image | `![alt](path)` — path points to the exported attachment |
+| Attachment | Inline Markdown link to the exported file |
+
+Attachment paths follow the configured `attachment_path` template. See [Understanding the exported file structure](/guides/output-structure) for details.
+
+## Code
+
+| Confluence element | Markdown output |
+|--------------------|-----------------|
+| Code block (any language) | Fenced code block with the matching language tag |
+
+Example:
+
+````markdown
+```python
+def hello():
+    print("Hello, world!")
+```
+````
+
+## Advanced elements
+
+| Confluence element | Markdown output |
+|--------------------|-----------------|
+| Task list item | `- [x] done` / `- [ ] open` |
+| Info / Note / Warning panel | Markdown alert block (`> [!NOTE]`, `> [!WARNING]`, etc.) |
+| Page properties macro | YAML front matter key–value pairs |
+| Page labels | `labels` array in YAML front matter |
+| Page title | First-level heading and `title` front matter key |
+
+### Front matter example
+
+```markdown
+---
+title: My Confluence Page
+labels:
+  - engineering
+  - draft
+my_property: some value
+---
+```
+
+## Diagrams
+
+<CardGroup cols={2}>
+  <Card title="Mermaid (via draw.io)" icon="diagram-project">
+    When a draw.io diagram contains an embedded Mermaid graph, cme extracts it and emits a fenced `mermaid` code block.
+  </Card>
+  <Card title="PlantUML" icon="sitemap">
+    PlantUML macro content is exported as a fenced `plantuml` code block, preserving the diagram source.
+  </Card>
+</CardGroup>
+
+## Confluence add-ons
+
+cme supports the following Confluence Marketplace add-ons out of the box:
+
+| Add-on | Behavior |
+|--------|----------|
+| [draw.io — Diagrams for Confluence](https://marketplace.atlassian.com/apps/1210933) | Embedded Mermaid diagrams are extracted and rendered as `mermaid` code blocks |
+| [Flowchart & PlantUML Diagrams for Confluence](https://marketplace.atlassian.com/apps/1222993) | PlantUML source is preserved as a `plantuml` code block |
+| [Markdown Extensions for Confluence](https://marketplace.atlassian.com/apps/1215703) | Markdown content stored natively is passed through without re-conversion |
+
+## Page metadata in front matter
+
+cme automatically adds YAML front matter to every exported page. The following fields are included when present:
+
+| Front matter key | Source |
+|------------------|--------|
+| `title` | Page title from Confluence |
+| `labels` | Page labels (tags) |
+| *(custom keys)* | All page properties from the Page Properties macro |
+
+<Note>
+  You can disable the document title heading with `cme config set export.include_document_title=false`. The `title` front matter key is always written regardless of this setting. To convert Page Properties macro tables to a regular Markdown table instead of front matter, set `cme config set export.page_properties_as_front_matter=false`.
+</Note>

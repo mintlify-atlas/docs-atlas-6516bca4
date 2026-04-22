@@ -1,0 +1,63 @@
+---
+title: "Confluence Markdown Exporter: what it does and why"
+description: "A Python CLI that exports Confluence pages to Markdown via the Atlassian API. Supports Cloud, Server 8.5.x, and Data Center 8+ with incremental exports."
+---
+
+Confluence Markdown Exporter (`cme`) is an open-source Python CLI that converts Confluence pages into clean Markdown files using the Atlassian REST API. Whether you're migrating content off Confluence or keeping a local Markdown mirror in sync, `cme` handles the full conversion pipeline — including headings, tables, code blocks, images, diagrams, task lists, and more.
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Incremental exports" icon="rotate">
+    Skips pages that have not changed since the last run, making repeated exports fast even for large spaces.
+  </Card>
+  <Card title="Parallel processing" icon="bolt">
+    Exports multiple pages simultaneously with a configurable worker count to maximize throughput.
+  </Card>
+  <Card title="Rich element support" icon="table">
+    Converts tables, code blocks, tasks, alerts, images, draw.io diagrams, and PlantUML diagrams.
+  </Card>
+  <Card title="Jira enrichment" icon="link">
+    Fetches Jira issue data to enrich linked issues in exported pages with their summaries.
+  </Card>
+  <Card title="Target-system presets" icon="sliders">
+    Ready-made configurations for Obsidian, Azure DevOps Wikis, Foam, Dendron, Gollum, and more.
+  </Card>
+  <Card title="CI-friendly" icon="gear">
+    Clean log output, environment variable overrides, and fully non-interactive mode for automation.
+  </Card>
+</CardGroup>
+
+## Supported Confluence versions
+
+`cme` connects to Confluence via the official REST API and has been tested on:
+
+- **Confluence Cloud** — all current cloud instances (`*.atlassian.net`)
+- **Confluence Server 8.5.x** — self-hosted Server installations
+- **Confluence Data Center 8+** — supports the v2 REST API (`connection_config.use_v2_api=true`)
+
+## Supported Markdown targets
+
+Export output can be tuned for a variety of Markdown-based platforms:
+
+| Platform | Notes |
+|---|---|
+| **Obsidian** | Disable document title and breadcrumbs for native rendering |
+| **Azure DevOps Wikis** | Absolute attachment links, `.attachments/` folder, ADO filename encoding |
+| **Foam** | Standard Markdown output with front matter |
+| **Dendron** | Standard Markdown output with front matter |
+| **Gollum** | Standard Markdown output |
+| **Any Markdown wiki** | Configurable link styles, path templates, and filename encoding |
+
+See [Target systems](/configuration/target-systems) for ready-made configuration commands for each platform.
+
+## Get started
+
+<CardGroup cols={2}>
+  <Card title="Install" icon="download" href="/installation">
+    Install `cme` on macOS, Linux, or Windows using the one-line installer or pip.
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Configure credentials and run your first Confluence export in minutes.
+  </Card>
+</CardGroup>

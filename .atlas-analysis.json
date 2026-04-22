@@ -1,0 +1,85 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Confluence Markdown Exporter",
+  "projectDescription": "A CLI tool that exports Atlassian Confluence pages, spaces, and organizations to Markdown files via the Confluence REST API.",
+  "theme": "palm",
+  "primaryColor": "#e0c155",
+  "lightColor": "#4a6a83",
+  "darkColor": "#d5d6d3",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Commands",
+            "pages": [
+              "commands/export",
+              "commands/config"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/options",
+              "configuration/authentication",
+              "configuration/environment-variables",
+              "configuration/target-systems"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/supported-elements",
+              "guides/output-structure",
+              "guides/ci-automation",
+              "guides/troubleshooting"
+            ]
+          },
+          {
+            "group": "Contributing",
+            "pages": [
+              "contributing/development",
+              "contributing/testing"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Export individual Confluence pages, page trees, entire spaces, or full organizations to Markdown",
+    "Supports Confluence Cloud and Server (including Data Center 8+)",
+    "Converts Confluence elements: headings, tables, lists, code blocks, images, tasks, alerts, front matter",
+    "Supports Confluence add-ons: draw.io, PlantUML, Markdown Extensions",
+    "Incremental exports — skips unchanged pages using a lockfile",
+    "Parallel export with configurable worker count",
+    "Jira issue enrichment for linked issues",
+    "Interactive and scriptable configuration management",
+    "CI-friendly with environment variable overrides and clean log output",
+    "Target-system presets for Obsidian, Azure DevOps Wikis, and more"
+  ],
+  "publicApiSurface": [
+    "cme pages <page-url>",
+    "cme pages-with-descendants <page-url>",
+    "cme spaces <space-url>",
+    "cme orgs <base-url>",
+    "cme config",
+    "cme config list",
+    "cme config get <key>",
+    "cme config set <key=value>",
+    "cme config edit <key>",
+    "cme config path",
+    "cme config reset",
+    "cme version",
+    "cme bugreport"
+  ]
+}

@@ -1,0 +1,147 @@
+---
+title: "How cme structures your exported files and attachments"
+description: "Learn how cme mirrors the Confluence page hierarchy on disk, customize paths using page_path and attachment_path templates, and manage the lockfile."
+---
+
+cme mirrors the Confluence page hierarchy on disk: each space becomes a top-level folder, and nested pages produce nested subdirectories. Attachments are stored separately under a configurable path. Understanding this structure makes it easy to integrate the output into wikis, static sites, or version control.
+
+## Default directory layout
+
+After exporting a space, the output looks like this:
+
+```text
+output_path/
+└── MYSPACE/
+   ├── MYSPACE.md
+   └── MYSPACE/
+      ├── My Confluence Page.md
+      └── My Confluence Page/
+            ├── My nested Confluence Page.md
+            └── Another one.md
+```
+
+The hierarchy maps directly to Confluence: space → homepage → ancestor pages → page. Each page gets a `.md` file and, when it has child pages, a same-name directory that holds them.
+
+## Path templates
+
+Both page paths and attachment paths are configurable using template strings. Variables inside `{curly braces}` are substituted at export time.
+
+### Page path
+
+Controls where each exported Markdown file is written.
+
+- **Default:** `{space_name}/{homepage_title}/{ancestor_titles}/{page_title}.md`
+- **ENV var:** `CME_EXPORT__PAGE_PATH`
+
+```bash
+cme config set 'export.page_path={space_name}/{ancestor_titles}/{page_title}.md'
+```
+
+### Attachment path
+
+Controls where each downloaded attachment is written.
+
+- **Default:** `{space_name}/attachments/{attachment_file_id}{attachment_extension}`
+- **ENV var:** `CME_EXPORT__ATTACHMENT_PATH`
+
+```bash
+cme config set 'export.attachment_path={space_name}/attachments/{attachment_title}'
+```
+
+## Template variables
+
+### Page path variables
+
+| Variable | Description |
+|----------|-------------|
+| `{space_key}` | Key of the Confluence space (e.g. `MYSPACE`) |
+| `{space_name}` | Display name of the Confluence space |
+| `{homepage_id}` | ID of the space homepage |
+| `{homepage_title}` | Title of the space homepage |
+| `{ancestor_ids}` | Slash-joined list of ancestor page IDs |
+| `{ancestor_titles}` | Slash-joined path of ancestor page titles |
+| `{page_id}` | Unique ID of the Confluence page |
+| `{page_title}` | Title of the page being exported |
+
+### Attachment path variables
+
+| Variable | Description |
+|----------|-------------|
+| `{space_key}` | Key of the Confluence space (e.g. `MYSPACE`) |
+| `{space_name}` | Display name of the Confluence space |
+| `{homepage_id}` | ID of the space homepage |
+| `{homepage_title}` | Title of the space homepage |
+| `{ancestor_ids}` | Slash-joined list of ancestor page IDs |
+| `{ancestor_titles}` | Slash-joined path of ancestor page titles |
+| `{attachment_id}` | Confluence attachment record ID |
+| `{attachment_title}` | Original attachment filename |
+| `{attachment_file_id}` | Unique file ID assigned by Confluence |
+| `{attachment_extension}` | File extension including the leading dot (e.g. `.png`) |
+
+## Link generation
+
+cme generates links between pages and to attachments automatically. You can control whether those links are relative or absolute.
+
+| Config key | Options | ENV var |
+|------------|---------|---------|
+| `export.page_href` | `relative` (default), `absolute` | `CME_EXPORT__PAGE_HREF` |
+| `export.attachment_href` | `relative` (default), `absolute` | `CME_EXPORT__ATTACHMENT_HREF` |
+
+```bash
+# Switch to absolute links (required for some wikis)
+cme config set export.page_href=absolute export.attachment_href=absolute
+```
+
+## Breadcrumbs
+
+When `export.page_breadcrumbs` is `true` (the default), cme prepends breadcrumb navigation links to the top of each exported page so readers can trace the page's location in the hierarchy.
+
+```bash
+# Disable breadcrumbs (e.g. for Obsidian)
+cme config set export.page_breadcrumbs=false
+```
+
+## Filename encoding and length
+
+Confluence page titles can contain characters that are forbidden or inconvenient on certain filesystems. Two config options handle this:
+
+| Config key | Default | Description |
+|------------|---------|-------------|
+| `export.filename_encoding` | Platform defaults | JSON character map — forbidden chars are replaced with the specified substitutes |
+| `export.filename_length` | `255` | Maximum filename length in characters |
+
+## Lockfile and incremental exports
+
+cme writes a `confluence-lock.json` file in `output_path` after each export. This file records the exported version of every page. On subsequent runs, unchanged pages are skipped automatically (`export.skip_unchanged=true` by default).
+
+```bash
+# Force a full re-export by removing the lockfile
+rm confluence-lock.json
+
+# Or disable skip-unchanged entirely
+cme config set export.skip_unchanged=false
+```
+
+## Stale file cleanup
+
+When `export.cleanup_stale` is `true` (the default), cme removes local `.md` files whose corresponding Confluence pages have been deleted or moved since the last export. This keeps the output directory in sync with Confluence without manual cleanup.
+
+```bash
+cme config set export.cleanup_stale=false  # keep stale files
+```
+
+## Example: Azure DevOps configuration
+
+ADO Wikis expect attachments in a `.attachments/` folder at the repo root, require absolute attachment links, and impose stricter filename rules. Apply all of these at once:
+
+```bash
+cme config set \
+  export.attachment_href=absolute \
+  'export.attachment_path=.attachments/{attachment_file_id}{attachment_extension}' \
+  'export.filename_encoding={" ":"-","\"":"%22","*":"%2A","-":"%2D",":":"%3A","<":"%3C",">":"%3E","?":"%3F","|":"%7C","\\":"_","#":"_","/":"_","\u0000":"_"}' \
+  export.filename_length=200
+```
+
+<Note>
+  Spaces are encoded as `-`, dashes are percent-encoded as `%2D`, and other forbidden characters become underscores. The 200-character limit avoids ADO's path-length restrictions.
+</Note>

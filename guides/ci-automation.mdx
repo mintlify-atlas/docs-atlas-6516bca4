@@ -1,0 +1,152 @@
+---
+title: "Automate Confluence Markdown exports in CI pipelines"
+description: "Configure Confluence Markdown Exporter for automated non-interactive runs in GitHub Actions, GitLab CI, and other CI platforms using environment variables."
+---
+
+cme is designed to run unattended in CI pipelines. It automatically detects non-interactive environments, suppresses terminal animations, and produces clean log output suitable for CI log aggregators. Combined with environment variable overrides and the lockfile-based incremental export, you can schedule reliable Confluence exports with minimal configuration.
+
+## CI environment detection
+
+cme disables ANSI colors and live terminal output (spinners, progress bar redraws) when it detects a CI environment:
+
+| Variable | Effect |
+|----------|--------|
+| `CI=true` | Disables ANSI color codes and live terminal output |
+| `NO_COLOR=1` | Same effect — follows the [no-color.org](https://no-color.org) convention |
+
+Most CI platforms set `CI=true` automatically, including GitHub Actions, GitLab CI, CircleCI, and Jenkins. No extra configuration is required to get clean log output on these platforms.
+
+## Non-interactive configuration
+
+Use `cme config set` to configure options before running an export. Values set this way are persisted in the config file, so you only need to run them once (e.g. during a setup step):
+
+```bash
+cme config set export.output_path=./confluence-docs
+cme config set export.log_level=INFO
+cme config set export.skip_unchanged=true
+```
+
+For one-off overrides without persisting to config, use environment variables:
+
+```bash
+CME_EXPORT__OUTPUT_PATH=./confluence-docs cme spaces <url>
+CME_EXPORT__LOG_LEVEL=INFO cme spaces <url>
+```
+
+<Note>
+  Auth credentials (username, API token, PAT) use URL-keyed nested config entries and **cannot be set via environment variables or `cme config set`**. The recommended approach for CI is to configure credentials once locally using `cme config edit auth.confluence`, then commit the resulting config file (with secrets removed) and point CI at a pre-seeded config using `CME_CONFIG_PATH`. Alternatively, configure credentials interactively on a one-time basis before your first CI run.
+</Note>
+
+## Custom config file location
+
+To keep CI config separate from local config, point cme at a dedicated file:
+
+```bash
+export CME_CONFIG_PATH=/path/to/ci-config.json
+```
+
+cme will read and write all config from this path for the duration of the session.
+
+## Controlling log verbosity
+
+```bash
+# Verbose — log every step (useful when debugging a failing pipeline)
+CME_EXPORT__LOG_LEVEL=DEBUG cme spaces <url>
+
+# Standard — log key milestones only (recommended for CI)
+CME_EXPORT__LOG_LEVEL=INFO cme spaces <url>
+
+# Quiet — log warnings and errors only
+CME_EXPORT__LOG_LEVEL=WARNING cme spaces <url>
+```
+
+## Example: GitHub Actions workflow
+
+The workflow below runs on a nightly schedule and exports an entire Confluence space. It caches the lockfile between runs so unchanged pages are skipped.
+
+<Note>
+  Confluence credentials (username and API token) cannot be injected via environment variables due to the URL-keyed auth structure. The cleanest CI approach is to store a pre-configured `cme` config file (with credentials already set) as a CI secret or in a secrets manager, then point `cme` at it using `CME_CONFIG_PATH`.
+</Note>
+
+```yaml
+name: Export Confluence
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cme
+        run: curl -LsSf uvx.sh/confluence-markdown-exporter/install.sh | sh
+
+      - name: Restore lockfile cache
+        uses: actions/cache@v4
+        with:
+          path: confluence-docs/confluence-lock.json
+          key: confluence-lock-${{ github.ref_name }}
+          restore-keys: confluence-lock-
+
+      - name: Write cme config from secret
+        run: echo "$CME_CONFIG_JSON" > /tmp/cme-config.json
+        env:
+          CME_CONFIG_JSON: ${{ secrets.CME_CONFIG_JSON }}
+
+      - name: Export Confluence space
+        env:
+          CME_CONFIG_PATH: /tmp/cme-config.json
+          CME_EXPORT__OUTPUT_PATH: ./confluence-docs
+          CME_EXPORT__LOG_LEVEL: INFO
+        run: cme spaces https://company.atlassian.net/wiki/spaces/MYSPACE
+
+      - name: Commit exported docs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add confluence-docs/
+          git diff --cached --quiet || git commit -m "chore: update Confluence export"
+          git push
+```
+
+<Tip>
+  Cache the `confluence-lock.json` lockfile between pipeline runs. When cme finds it on the next run, it skips pages that haven't changed — dramatically reducing export time and API calls for large spaces.
+</Tip>
+
+## Example: GitLab CI pipeline
+
+```yaml
+export-confluence:
+  image: python:3.12-slim
+  schedule:
+    - cron: '0 2 * * *'
+  before_script:
+    - curl -LsSf uvx.sh/confluence-markdown-exporter/install.sh | sh
+  script:
+    - cme config set export.output_path=./confluence-docs
+    - cme config set export.log_level=INFO
+    - cme spaces https://company.atlassian.net/wiki/spaces/MYSPACE
+  cache:
+    key: confluence-lock
+    paths:
+      - confluence-docs/confluence-lock.json
+  artifacts:
+    paths:
+      - confluence-docs/
+```
+
+## Incremental exports
+
+By default, `export.skip_unchanged=true` means cme compares each page's current version against the version recorded in the lockfile and skips pages with no changes. This is safe to leave enabled in CI — it won't suppress pages that genuinely changed.
+
+To force a full re-export (for example after changing the `page_path` template):
+
+```bash
+# Delete the lockfile to make cme treat all pages as new
+rm confluence-docs/confluence-lock.json
+```

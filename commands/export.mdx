@@ -1,0 +1,294 @@
+---
+title: "cme export commands reference: pages, spaces, orgs"
+description: "Reference for all cme export commands: pages, pages-with-descendants, spaces, orgs, version, bugreport, and their singular aliases with URL format examples."
+---
+
+`cme` provides four export scopes so you can target exactly what you need — from a single page to every space across your entire organization. Every plural command (`pages`, `spaces`, `orgs`, `pages-with-descendants`) accepts one or more URLs as space-separated arguments. Each also has a singular alias (`page`, `space`, `org`, `page-with-descendants`) that behaves identically.
+
+<Tip>
+  Pass multiple URLs to any export command to export them in a single run. For example:
+  `cme pages https://...page1 https://...page2`
+</Tip>
+
+---
+
+## pages
+
+Export one or more Confluence pages by URL to Markdown.
+
+`cme pages` fetches each page via the Confluence REST API and writes a Markdown file to the configured output directory (`export.output_path`). Pages that have not changed since the last export are skipped by default (`export.skip_unchanged=true`).
+
+<Note>
+  `cme page` is a singular alias for `cme pages`. Both commands are identical — use whichever reads more naturally in your workflow.
+</Note>
+
+**Syntax**
+
+```bash
+cme pages <PAGE_URL> [<PAGE_URL> ...]
+cme page  <PAGE_URL>               # alias
+```
+
+| Argument | Description |
+| -------- | ----------- |
+| `PAGE_URL` | One or more Confluence page URLs. Supports Cloud and Server URL formats. |
+
+**Supported URL formats**
+
+<Tabs>
+  <Tab title="Cloud">
+    ```text
+    https://company.atlassian.net/wiki/spaces/SPACEKEY/pages/123456789/Page+Title
+    ```
+  </Tab>
+  <Tab title="Cloud (API gateway)">
+    ```text
+    https://api.atlassian.com/ex/confluence/CLOUDID/wiki/spaces/SPACEKEY/pages/123456789/Page+Title
+    ```
+    The API gateway URL is used when a `cloud_id` is configured. It is set automatically on first connection for Atlassian Cloud instances.
+  </Tab>
+  <Tab title="Server (long)">
+    ```text
+    https://wiki.company.com/display/SPACEKEY/Page+Title
+    ```
+  </Tab>
+  <Tab title="Server (short)">
+    ```text
+    https://wiki.company.com/SPACEKEY/Page+Title
+    ```
+  </Tab>
+</Tabs>
+
+**Examples**
+
+```bash
+# Export a single page
+cme pages https://company.atlassian.net/wiki/spaces/KEY/pages/123456789/My+Page
+
+# Export multiple pages at once
+cme pages https://company.atlassian.net/wiki/spaces/KEY/pages/123/Page+One \
+          https://company.atlassian.net/wiki/spaces/KEY/pages/456/Page+Two
+
+# Using the singular alias
+cme page https://company.atlassian.net/wiki/spaces/KEY/pages/123456789/My+Page
+```
+
+---
+
+## pages-with-descendants
+
+Export one or more Confluence pages **and all their descendants** by URL to Markdown.
+
+`cme pages-with-descendants` recursively fetches the given page(s) and every child page beneath them, then writes Markdown files to the configured output directory. This is useful for exporting an entire page tree without exporting a whole space.
+
+<Note>
+  `cme page-with-descendants` is a singular alias for `cme pages-with-descendants`. Both commands are identical.
+</Note>
+
+**Syntax**
+
+```bash
+cme pages-with-descendants <PAGE_URL> [<PAGE_URL> ...]
+cme page-with-descendants  <PAGE_URL>                   # alias
+```
+
+| Argument | Description |
+| -------- | ----------- |
+| `PAGE_URL` | One or more Confluence page URLs. Each page and all its descendants will be exported. |
+
+**Supported URL formats**
+
+<Tabs>
+  <Tab title="Cloud">
+    ```text
+    https://company.atlassian.net/wiki/spaces/SPACEKEY/pages/123456789/Page+Title
+    ```
+  </Tab>
+  <Tab title="Cloud (API gateway)">
+    ```text
+    https://api.atlassian.com/ex/confluence/CLOUDID/wiki/spaces/SPACEKEY/pages/123456789/Page+Title
+    ```
+  </Tab>
+  <Tab title="Server (long)">
+    ```text
+    https://wiki.company.com/display/SPACEKEY/Page+Title
+    ```
+  </Tab>
+  <Tab title="Server (short)">
+    ```text
+    https://wiki.company.com/SPACEKEY/Page+Title
+    ```
+  </Tab>
+</Tabs>
+
+**Examples**
+
+```bash
+# Export a root page and all its children/grandchildren
+cme pages-with-descendants https://company.atlassian.net/wiki/spaces/KEY/pages/123/Root+Page
+
+# Export multiple page trees at once
+cme pages-with-descendants https://company.atlassian.net/wiki/spaces/KEY/pages/123/Root+One \
+                           https://company.atlassian.net/wiki/spaces/KEY/pages/456/Root+Two
+
+# Using the singular alias
+cme page-with-descendants https://company.atlassian.net/wiki/spaces/KEY/pages/123/Root+Page
+```
+
+---
+
+## spaces
+
+Export **all pages** in one or more Confluence spaces by URL to Markdown.
+
+`cme spaces` fetches every page in each space via the Confluence API and writes Markdown files to the configured output directory. Pages that have not changed since the last export are skipped by default.
+
+<Note>
+  `cme space` is a singular alias for `cme spaces`. Both commands are identical.
+</Note>
+
+**Syntax**
+
+```bash
+cme spaces <SPACE_URL> [<SPACE_URL> ...]
+cme space  <SPACE_URL>                   # alias
+```
+
+| Argument | Description |
+| -------- | ----------- |
+| `SPACE_URL` | One or more Confluence space URLs. All pages within each space will be exported. |
+
+**Supported URL formats**
+
+<Tabs>
+  <Tab title="Cloud">
+    ```text
+    https://company.atlassian.net/wiki/spaces/SPACEKEY
+    ```
+  </Tab>
+  <Tab title="Cloud (API gateway)">
+    ```text
+    https://api.atlassian.com/ex/confluence/CLOUDID/wiki/spaces/SPACEKEY
+    ```
+  </Tab>
+  <Tab title="Server (long)">
+    ```text
+    https://wiki.company.com/display/SPACEKEY
+    ```
+  </Tab>
+  <Tab title="Server (short)">
+    ```text
+    https://wiki.company.com/SPACEKEY
+    ```
+  </Tab>
+</Tabs>
+
+**Examples**
+
+```bash
+# Export all pages in a single space
+cme spaces https://company.atlassian.net/wiki/spaces/MYSPACE
+
+# Export multiple spaces at once
+cme spaces https://company.atlassian.net/wiki/spaces/SPACE1 \
+           https://company.atlassian.net/wiki/spaces/SPACE2
+
+# Using the singular alias
+cme space https://company.atlassian.net/wiki/spaces/MYSPACE
+```
+
+---
+
+## orgs
+
+Export **all spaces** of one or more Confluence organizations to Markdown.
+
+`cme orgs` iterates over every space in the organization and exports all pages in each. This is the broadest export scope. Use `cme spaces` to target specific spaces, or `cme pages` / `cme pages-with-descendants` for finer-grained control.
+
+The base URL is the root of the Confluence instance — not a space URL.
+
+<Note>
+  `cme org` is a singular alias for `cme orgs`. Both commands are identical.
+</Note>
+
+**Syntax**
+
+```bash
+cme orgs <BASE_URL> [<BASE_URL> ...]
+cme org  <BASE_URL>                   # alias
+```
+
+| Argument | Description |
+| -------- | ----------- |
+| `BASE_URL` | One or more Confluence instance root URLs. All spaces and pages within each organization will be exported. Example: `https://company.atlassian.net` |
+
+**Examples**
+
+```bash
+# Export everything in an organization
+cme orgs https://company.atlassian.net
+
+# Export multiple organizations at once
+cme orgs https://company1.atlassian.net https://company2.atlassian.net
+
+# Using the singular alias
+cme org https://company.atlassian.net
+```
+
+---
+
+## version
+
+Print the installed version of `confluence-markdown-exporter`.
+
+**Syntax**
+
+```bash
+cme version
+```
+
+**Example output**
+
+```text
+confluence-markdown-exporter 4.0.8
+```
+
+---
+
+## bugreport
+
+Print diagnostic information for filing a bug report.
+
+`cme bugreport` outputs the app version, Python and OS details, and the current configuration with all secrets redacted — API tokens and PATs are masked, and instance URL hostnames are partially hidden. Paste the full output into your GitHub issue when reporting a bug.
+
+**Syntax**
+
+```bash
+cme bugreport
+```
+
+**Example output**
+
+```text
+## Bug Report Diagnostic Info
+
+### Version
+confluence-markdown-exporter 4.0.8
+
+### System
+Python: 3.12.0 (main, ...)
+Platform: macOS-14.0-arm64-arm-64bit
+Architecture: arm64
+
+### Config
+Config file: [redacted]
+(yaml)
+auth:
+  confluence:
+    https://******.atlassian.net:
+      api_token: '[redacted]'
+      ...
+export:
+  output_path: '[redacted]'
+  log_level: INFO
+```

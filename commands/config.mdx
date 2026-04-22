@@ -1,0 +1,276 @@
+---
+title: "cme config: manage exporter settings and credentials"
+description: "Reference for all cme config subcommands — interactive menu, list, get, set, edit, path, and reset — with syntax, options, and usage examples for each."
+---
+
+`cme config` manages all settings for the exporter — credentials, output paths, connection tuning, and more. It has two modes: an **interactive menu** for browsing and editing settings visually, and **scripted subcommands** for use in automation, CI pipelines, or shell scripts. Both modes read and write the same configuration file.
+
+<CardGroup cols={2}>
+  <Card title="Interactive" icon="computer-mouse">
+    Run `cme config` with no arguments to open the full menu. Browse every setting, select to change, and navigate nested sections.
+  </Card>
+  <Card title="Scripted" icon="terminal">
+    Use subcommands like `cme config set`, `cme config get`, and `cme config list` to read and write values without any prompts.
+  </Card>
+</CardGroup>
+
+---
+
+## cme config (interactive menu)
+
+Running `cme config` with no subcommand opens the interactive configuration menu.
+
+```bash
+cme config
+```
+
+From the menu you can:
+
+- See all config options and their current values
+- Select any option to change it, including authentication credentials
+- Navigate into nested sections such as `auth.confluence`
+- Reset all configuration to defaults
+
+The interactive menu is the recommended way to configure authentication, because auth keys contain instance URLs that cannot be set via `cme config set`.
+
+---
+
+## cme config list
+
+Print the current configuration as YAML or JSON.
+
+`cme config list` shows all settings and their current effective values. Use it to discover available config keys before using `cme config get` or `cme config set`.
+
+<Warning>
+  Secret values such as API tokens and passwords are printed in plaintext by this command. Treat the output as sensitive.
+</Warning>
+
+**Syntax**
+
+```bash
+cme config list
+cme config list -o yaml    # explicit YAML (default)
+cme config list -o json    # JSON output
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `-o`, `--output FORMAT` | Output format. Accepted values: `yaml` (default) or `json`. |
+
+**Examples**
+
+```bash
+# Print config as YAML (default)
+cme config list
+
+# Print config as JSON
+cme config list -o json
+```
+
+---
+
+## cme config get
+
+Print the current value of a single config key.
+
+Keys use dot notation to address nested settings. Nested sections are printed as YAML. Run `cme config list` to see all available keys.
+
+**Syntax**
+
+```bash
+cme config get <KEY>
+```
+
+| Argument | Description |
+| -------- | ----------- |
+| `KEY` | Config key in dot notation. Examples: `export.log_level`, `connection_config.max_workers`, `export`. |
+
+**Examples**
+
+```bash
+# Get a single value
+cme config get export.log_level
+cme config get export.output_path
+cme config get connection_config.max_workers
+
+# Get a whole section (printed as YAML)
+cme config get connection_config
+cme config get export
+```
+
+---
+
+## cme config set
+
+Set one or more configuration values directly.
+
+Each argument must be a `key=value` pair using dot notation for the key. Values are parsed as JSON first — so `true`, `false`, numbers, and JSON arrays work as expected — then fall back to a plain string.
+
+<Note>
+  For auth keys that contain a URL (e.g. `auth.confluence.https://...`), use `cme config edit auth.confluence` instead. The interactive editor handles URL-based keys correctly; `cme config set` cannot.
+</Note>
+
+**Syntax**
+
+```bash
+cme config set <KEY=VALUE> [<KEY=VALUE> ...]
+```
+
+| Argument | Description |
+| -------- | ----------- |
+| `KEY=VALUE` | One or more `key=value` pairs. Keys use dot notation. Values are parsed as JSON first, then as plain strings. |
+
+**Examples**
+
+```bash
+# Set a log level
+cme config set export.log_level=DEBUG
+
+# Set an output path
+cme config set export.output_path=/tmp/export
+
+# Set a boolean (JSON parsing handles true/false)
+cme config set export.skip_unchanged=false
+
+# Set a number
+cme config set connection_config.max_workers=5
+
+# Disable SSL verification
+cme config set connection_config.verify_ssl=false
+
+# Set multiple keys in a single command
+cme config set export.log_level=INFO export.output_path=./out
+```
+
+---
+
+## cme config edit
+
+Open the interactive editor pre-navigated to a specific config key.
+
+`cme config edit` launches the interactive configuration menu and navigates directly to the given key, skipping the top-level menu. This is required for editing authentication credentials, where the instance URL is part of the key and cannot be set via `cme config set`.
+
+<Note>
+  Always use `cme config edit auth.confluence` or `cme config edit auth.jira` to add or update credentials. The `cme config set` command cannot handle URL-keyed auth entries correctly.
+</Note>
+
+**Syntax**
+
+```bash
+cme config edit <KEY>
+```
+
+| Argument | Description |
+| -------- | ----------- |
+| `KEY` | Config key to open in the interactive editor, using dot notation. Examples: `auth.confluence`, `auth.jira`, `export.log_level`. |
+
+**Examples**
+
+```bash
+# Add or update Confluence credentials
+cme config edit auth.confluence
+
+# Edit Jira credentials
+cme config edit auth.jira
+
+# Edit a setting interactively
+cme config edit export.log_level
+cme config edit export.output_path
+```
+
+---
+
+## cme config path
+
+Print the absolute path to the configuration file.
+
+**Syntax**
+
+```bash
+cme config path
+```
+
+The config file location can be overridden by setting the `CME_CONFIG_PATH` environment variable.
+
+**Examples**
+
+```bash
+# Print the default config file path
+cme config path
+
+# Print a custom config file path
+CME_CONFIG_PATH=/custom/path.json cme config path
+```
+
+---
+
+## cme config reset
+
+Reset configuration to factory defaults.
+
+Without a `KEY` argument, `cme config reset` resets the **entire configuration** and prompts for confirmation. Pass a dot-notation key to reset only that key or section. Use `--yes` / `-y` to skip the confirmation prompt.
+
+<Tip>
+  Use `cme config reset --yes` in scripts and CI pipelines to skip the interactive confirmation prompt.
+</Tip>
+
+**Syntax**
+
+```bash
+cme config reset [KEY]
+cme config reset --yes         # skip confirmation
+cme config reset --yes [KEY]   # reset key without prompt
+```
+
+| Argument / Option | Description |
+| ----------------- | ----------- |
+| `KEY` | Dot-notation config key or section to reset. If omitted, the entire configuration is reset. Examples: `export.log_level`, `connection_config`, `export`. |
+| `--yes`, `-y` | Skip the confirmation prompt. |
+
+**Examples**
+
+```bash
+# Reset everything (prompts for confirmation)
+cme config reset
+
+# Reset everything without confirmation (for scripting)
+cme config reset --yes
+
+# Reset a single key to its default
+cme config reset export.log_level
+
+# Reset a whole section to defaults
+cme config reset connection_config
+```
+
+---
+
+## Common config keys
+
+The table below lists the most frequently used configuration keys. Run `cme config list` to see all current values, or `cme config get <key>` to read a specific one.
+
+| Key | Description |
+| --- | ----------- |
+| `export.output_path` | Directory where exported files are saved |
+| `export.log_level` | Verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| `export.skip_unchanged` | Skip pages unchanged since the last export |
+| `export.cleanup_stale` | Delete local files for pages removed from Confluence |
+| `export.page_path` | File path template for exported pages |
+| `export.attachment_path` | File path template for exported attachments |
+| `export.page_href` | Link style for pages: `relative` or `absolute` |
+| `export.attachment_href` | Link style for attachments: `relative` or `absolute` |
+| `export.include_document_title` | Prepend an H1 title to each exported page |
+| `export.page_breadcrumbs` | Include breadcrumb links at the top of each page |
+| `export.enable_jira_enrichment` | Fetch Jira data to enrich linked issues |
+| `export.attachment_export_all` | Export all attachments, not only referenced ones |
+| `export.filename_length` | Maximum filename length (default: `255`) |
+| `connection_config.max_workers` | Parallel export workers (default: `20`) |
+| `connection_config.use_v2_api` | Use Confluence REST API v2 (`true`/`false`) |
+| `connection_config.verify_ssl` | Verify SSL certificates (`true`/`false`) |
+| `connection_config.timeout` | API request timeout in seconds (default: `30`) |
+| `auth.confluence` | Confluence credentials keyed by instance URL — use `cme config edit` |
+| `auth.jira` | Jira credentials keyed by instance URL — use `cme config edit` |
+
+<Note>
+  Most settings can also be overridden per-session with environment variables. Use the `CME_` prefix and `__` as the nested delimiter. For example: `CME_EXPORT__OUTPUT_PATH=/tmp/export` or `CME_CONNECTION_CONFIG__MAX_WORKERS=5`. Environment variable overrides are not persisted to the config file.
+</Note>

@@ -1,0 +1,233 @@
+---
+title: "All cme configuration options with their default values"
+description: "Complete reference for all configuration keys in the export, connection_config, and auth sections — with default values, ENV var overrides, and descriptions."
+---
+
+All configuration is stored in a single JSON file managed by `cme`. You can read and write values using the `cme config` commands without editing the file directly.
+
+```bash
+# Read a value
+cme config get export.log_level
+
+# Write a value
+cme config set export.log_level=DEBUG
+
+# List all current values
+cme config list
+```
+
+---
+
+## export.*
+
+Controls how pages and attachments are exported to your local filesystem.
+
+<ParamField path="export.log_level" type="string" default="INFO">
+  Controls output verbosity. Options: `DEBUG` (every step), `INFO` (key milestones), `WARNING` (warnings and errors only), `ERROR` (errors only).
+
+  ENV var: `CME_EXPORT__LOG_LEVEL`
+</ParamField>
+
+<ParamField path="export.output_path" type="string" default="./">
+  Directory where all exported files and folders are written. Used as the base for relative and absolute links.
+
+  ENV var: `CME_EXPORT__OUTPUT_PATH`
+</ParamField>
+
+<ParamField path="export.page_href" type="string" default="relative">
+  How to generate links to pages in Markdown. Options: `relative` or `absolute`.
+
+  ENV var: `CME_EXPORT__PAGE_HREF`
+</ParamField>
+
+<ParamField path="export.page_path" type="string" default="\{space_name\}/\{homepage_title\}/\{ancestor_titles\}/\{page_title\}.md">
+  Path template for exported page files. Available template variables:
+
+  | Variable | Description |
+  |---|---|
+  | `{space_key}` | Key of the Confluence space |
+  | `{space_name}` | Name of the Confluence space |
+  | `{homepage_id}` | ID of the space homepage |
+  | `{homepage_title}` | Title of the space homepage |
+  | `{ancestor_ids}` | Slash-separated list of ancestor page IDs |
+  | `{ancestor_titles}` | Slash-separated list of ancestor page titles |
+  | `{page_id}` | Unique ID of the Confluence page |
+  | `{page_title}` | Title of the Confluence page |
+
+  ENV var: `CME_EXPORT__PAGE_PATH`
+</ParamField>
+
+<ParamField path="export.attachment_href" type="string" default="relative">
+  How to generate links to attachments in Markdown. Options: `relative` or `absolute`.
+
+  ENV var: `CME_EXPORT__ATTACHMENT_HREF`
+</ParamField>
+
+<ParamField path="export.attachment_path" type="string" default="\{space_name\}/attachments/\{attachment_file_id\}\{attachment_extension\}">
+  Path template for exported attachments. Available template variables:
+
+  | Variable | Description |
+  |---|---|
+  | `{space_key}` | Key of the Confluence space |
+  | `{space_name}` | Name of the Confluence space |
+  | `{homepage_id}` | ID of the space homepage |
+  | `{homepage_title}` | Title of the space homepage |
+  | `{ancestor_ids}` | Slash-separated list of ancestor page IDs |
+  | `{ancestor_titles}` | Slash-separated list of ancestor page titles |
+  | `{attachment_id}` | Unique ID of the attachment |
+  | `{attachment_title}` | Title of the attachment |
+  | `{attachment_file_id}` | File ID of the attachment |
+  | `{attachment_extension}` | File extension, including the leading dot |
+
+  ENV var: `CME_EXPORT__ATTACHMENT_PATH`
+</ParamField>
+
+<ParamField path="export.attachment_export_all" type="boolean" default="false">
+  When `true`, exports all attachments on a page regardless of whether they are referenced in the page content. Exporting large or many attachments increases export time.
+
+  ENV var: `CME_EXPORT__ATTACHMENT_EXPORT_ALL`
+</ParamField>
+
+<ParamField path="export.page_breadcrumbs" type="boolean" default="true">
+  Whether to include breadcrumb links at the top of each exported page.
+
+  ENV var: `CME_EXPORT__PAGE_BREADCRUMBS`
+</ParamField>
+
+<ParamField path="export.filename_encoding" type="object">
+  Character mapping for filename sanitization. Each entry maps a source character to a replacement string. The default replaces characters that are forbidden in filenames on most operating systems with underscores.
+
+  ENV var: `CME_EXPORT__FILENAME_ENCODING`
+</ParamField>
+
+<ParamField path="export.filename_length" type="number" default="255">
+  Maximum number of characters allowed in a filename. Filenames exceeding this limit are truncated.
+
+  ENV var: `CME_EXPORT__FILENAME_LENGTH`
+</ParamField>
+
+<ParamField path="export.include_document_title" type="boolean" default="true">
+  Whether to prepend an H1 title heading to each exported page. Disable this when your target platform adds the title automatically (for example, Obsidian).
+
+  ENV var: `CME_EXPORT__INCLUDE_DOCUMENT_TITLE`
+</ParamField>
+
+<ParamField path="export.page_properties_as_front_matter" type="boolean" default="true">
+  When `true`, converts Confluence Page Properties macro tables into YAML front matter at the top of the exported file. When `false`, the macro is converted to a regular Markdown table instead.
+
+  ENV var: `CME_EXPORT__PAGE_PROPERTIES_AS_FRONT_MATTER`
+</ParamField>
+
+<ParamField path="export.filename_lowercase" type="boolean" default="false">
+  When `true`, all exported file and directory names are converted to lowercase. By default the original casing from Confluence page titles is retained.
+
+  ENV var: `CME_EXPORT__FILENAME_LOWERCASE`
+</ParamField>
+
+<ParamField path="export.enable_jira_enrichment" type="boolean" default="true">
+  When `true`, fetches Jira issue data to enrich Confluence pages. Jira issue links will include the issue summary. Requires Jira auth to be configured.
+
+  ENV var: `CME_EXPORT__ENABLE_JIRA_ENRICHMENT`
+</ParamField>
+
+<ParamField path="export.skip_unchanged" type="boolean" default="true">
+  Skip re-exporting pages that have not changed since the last run. Uses a lockfile to track page versions. Disable to force a full re-export.
+
+  ENV var: `CME_EXPORT__SKIP_UNCHANGED`
+</ParamField>
+
+<ParamField path="export.cleanup_stale" type="boolean" default="true">
+  After export, delete local files for pages that have been removed from Confluence or whose export path has changed.
+
+  ENV var: `CME_EXPORT__CLEANUP_STALE`
+</ParamField>
+
+<ParamField path="export.lockfile_name" type="string" default="confluence-lock.json">
+  Name of the lock file used to track exported page versions for `skip_unchanged` and `cleanup_stale`.
+
+  ENV var: `CME_EXPORT__LOCKFILE_NAME`
+</ParamField>
+
+<ParamField path="export.existence_check_batch_size" type="number" default="250">
+  Number of page IDs per batch when checking page existence during cleanup. For self-hosted Confluence instances using CQL, this is internally capped at 25.
+
+  ENV var: `CME_EXPORT__EXISTENCE_CHECK_BATCH_SIZE`
+</ParamField>
+
+---
+
+## connection_config.*
+
+Controls how `cme` connects to the Confluence API, including retry behavior and parallelism.
+
+<ParamField path="connection_config.backoff_and_retry" type="boolean" default="true">
+  Enable automatic retry with exponential backoff on network errors or rate-limit responses.
+
+  ENV var: `CME_CONNECTION_CONFIG__BACKOFF_AND_RETRY`
+</ParamField>
+
+<ParamField path="connection_config.backoff_factor" type="number" default="2">
+  Multiplier for exponential backoff between retries. A value of `2` means each retry waits twice as long as the previous one.
+
+  ENV var: `CME_CONNECTION_CONFIG__BACKOFF_FACTOR`
+</ParamField>
+
+<ParamField path="connection_config.max_backoff_seconds" type="number" default="60">
+  Maximum number of seconds to wait between retry attempts.
+
+  ENV var: `CME_CONNECTION_CONFIG__MAX_BACKOFF_SECONDS`
+</ParamField>
+
+<ParamField path="connection_config.max_backoff_retries" type="number" default="5">
+  Maximum number of retry attempts before giving up on a request.
+
+  ENV var: `CME_CONNECTION_CONFIG__MAX_BACKOFF_RETRIES`
+</ParamField>
+
+<ParamField path="connection_config.retry_status_codes" type="number[]" default="[413, 429, 502, 503, 504]">
+  HTTP status codes that trigger an automatic retry.
+
+  ENV var: `CME_CONNECTION_CONFIG__RETRY_STATUS_CODES`
+</ParamField>
+
+<ParamField path="connection_config.timeout" type="number" default="30">
+  Timeout in seconds for each API request. Prevents the exporter from hanging on slow or unresponsive servers.
+
+  ENV var: `CME_CONNECTION_CONFIG__TIMEOUT`
+</ParamField>
+
+<ParamField path="connection_config.verify_ssl" type="boolean" default="true">
+  Whether to verify SSL certificates for HTTPS requests. Only disable this if you are certain about the security of your connection (for example, a self-hosted instance with a self-signed certificate).
+
+  ENV var: `CME_CONNECTION_CONFIG__VERIFY_SSL`
+</ParamField>
+
+<ParamField path="connection_config.use_v2_api" type="boolean" default="false">
+  Enable Confluence REST API v2 endpoints. Supported on Atlassian Cloud and Confluence Data Center 8+. Must be disabled for older self-hosted Confluence Server instances.
+
+  ENV var: `CME_CONNECTION_CONFIG__USE_V2_API`
+</ParamField>
+
+<ParamField path="connection_config.max_workers" type="number" default="20">
+  Maximum number of parallel workers for page export. Higher values improve performance but may hit API rate limits. Set to `1` for serial/debug mode.
+
+  ENV var: `CME_CONNECTION_CONFIG__MAX_WORKERS`
+</ParamField>
+
+---
+
+## auth.*
+
+<Note>
+  Auth credentials use URL-keyed nested dicts (for example, `auth.confluence["https://company.atlassian.net"]`) and cannot be set via `cme config set`. Use `cme config edit auth.confluence` or the interactive menu instead. See [Authentication](/configuration/authentication) for a full setup guide.
+</Note>
+
+Auth is organized by service (`confluence` or `jira`) and instance URL. Each instance stores the following fields:
+
+| Field | Description |
+|---|---|
+| `url` | Instance base URL (used as the dict key) |
+| `username` | Email address for the account |
+| `api_token` | API token (Cloud) |
+| `pat` | Personal Access Token (Server / Data Center) |
+| `cloud_id` | Atlassian Cloud ID — auto-fetched for Cloud instances |

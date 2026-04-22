@@ -1,0 +1,101 @@
+---
+title: "Override cme configuration with environment variables"
+description: "Use CME_ prefixed environment variables to override any cme configuration option for the current session without modifying the stored config file."
+---
+
+Environment variables take precedence over the stored config file. They are not persisted — they apply only to the current process, making them ideal for CI pipelines and one-off overrides.
+
+---
+
+## Naming convention
+
+ENV var names follow a consistent pattern:
+
+- Prefix: `CME_`
+- Key name: uppercase
+- Nested delimiter: `__` (double underscore)
+
+For example, `export.log_level` becomes `CME_EXPORT__LOG_LEVEL`, and `connection_config.max_workers` becomes `CME_CONNECTION_CONFIG__MAX_WORKERS`.
+
+---
+
+## Examples
+
+```bash
+# Enable debug logging for a single run
+CME_EXPORT__LOG_LEVEL=DEBUG cme pages <url>
+
+# Write output to a specific directory
+CME_EXPORT__OUTPUT_PATH=/tmp/export cme spaces <url>
+
+# Reduce parallelism
+CME_CONNECTION_CONFIG__MAX_WORKERS=5 cme spaces <url>
+
+# Force a full re-export by disabling skip-unchanged
+CME_EXPORT__SKIP_UNCHANGED=false cme pages <url>
+```
+
+---
+
+## Custom config file path
+
+You can point `cme` at a different config file using `CME_CONFIG_PATH`. This is useful when managing multiple config profiles.
+
+```bash
+CME_CONFIG_PATH=/path/to/custom_config.json cme spaces <url>
+```
+
+You can also set it persistently in your shell environment:
+
+```bash
+export CME_CONFIG_PATH=/path/to/custom_config.json
+```
+
+---
+
+## Common ENV vars
+
+| ENV var | Config key | Description |
+|---|---|---|
+| `CME_EXPORT__LOG_LEVEL` | `export.log_level` | Verbosity level |
+| `CME_EXPORT__OUTPUT_PATH` | `export.output_path` | Output directory |
+| `CME_EXPORT__SKIP_UNCHANGED` | `export.skip_unchanged` | Skip unchanged pages |
+| `CME_EXPORT__CLEANUP_STALE` | `export.cleanup_stale` | Delete stale files after export |
+| `CME_EXPORT__INCLUDE_DOCUMENT_TITLE` | `export.include_document_title` | Prepend H1 title to pages |
+| `CME_EXPORT__PAGE_BREADCRUMBS` | `export.page_breadcrumbs` | Include breadcrumb links |
+| `CME_EXPORT__ENABLE_JIRA_ENRICHMENT` | `export.enable_jira_enrichment` | Enrich Jira issue links |
+| `CME_EXPORT__PAGE_HREF` | `export.page_href` | Link style for pages |
+| `CME_EXPORT__ATTACHMENT_HREF` | `export.attachment_href` | Link style for attachments |
+| `CME_EXPORT__PAGE_PROPERTIES_AS_FRONT_MATTER` | `export.page_properties_as_front_matter` | Convert page properties to front matter |
+| `CME_EXPORT__FILENAME_LOWERCASE` | `export.filename_lowercase` | Convert all filenames to lowercase |
+| `CME_CONNECTION_CONFIG__MAX_WORKERS` | `connection_config.max_workers` | Number of parallel workers |
+| `CME_CONNECTION_CONFIG__USE_V2_API` | `connection_config.use_v2_api` | Use Confluence REST API v2 |
+| `CME_CONNECTION_CONFIG__VERIFY_SSL` | `connection_config.verify_ssl` | SSL certificate verification |
+| `CME_CONNECTION_CONFIG__TIMEOUT` | `connection_config.timeout` | Request timeout in seconds |
+| `CME_CONNECTION_CONFIG__BACKOFF_AND_RETRY` | `connection_config.backoff_and_retry` | Enable retry with backoff |
+| `CME_CONFIG_PATH` | *(special)* | Override the config file path |
+
+---
+
+## Auth keys cannot be overridden via ENV vars
+
+<Warning>
+  Auth credentials (under `auth.confluence` and `auth.jira`) use instance URLs as dict keys. This structure cannot be expressed as a flat ENV var name. Use `cme config edit auth.confluence` to set credentials instead.
+</Warning>
+
+---
+
+## CI and non-interactive environments
+
+`cme` automatically detects CI environments and suppresses rich terminal formatting (colors, spinners, progress bar redraws), so log output is clean in CI logs. Detection is based on two standard variables:
+
+| Variable | Effect |
+|---|---|
+| `CI=true` | Disables ANSI color codes and live terminal output |
+| `NO_COLOR=1` | Same effect (follows the [no-color.org](https://no-color.org) convention) |
+
+Most CI platforms (GitHub Actions, GitLab CI, CircleCI, Jenkins) set `CI=true` automatically.
+
+<Tip>
+  Use `CME_EXPORT__LOG_LEVEL` to control verbosity per run without changing the stored config. For example, set `WARNING` in CI to reduce noise, or `DEBUG` when investigating an export issue.
+</Tip>

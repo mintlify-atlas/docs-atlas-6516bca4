@@ -1,0 +1,221 @@
+---
+title: "Troubleshoot Confluence Markdown Exporter problems"
+description: "Diagnose and fix common cme problems: auth errors, missing attachment IDs, proxy issues, SSL failures, rate limiting, slow exports, and filename encoding."
+---
+
+Most cme issues fall into a small number of categories: authentication, connectivity, file output, and performance. The accordion sections below describe each issue's symptoms, cause, and solution. If none of these resolve your problem, use `cme bugreport` to collect diagnostics and file a GitHub issue.
+
+<AccordionGroup>
+
+  <Accordion title="Authentication errors">
+
+**Symptom:** cme prompts for credentials mid-run, or exits with `AuthNotConfiguredError`.
+
+**Cause:** No credentials are stored for the Confluence instance URL you're exporting from.
+
+**Solution:** Run the interactive editor for the auth section and enter your username and API token (or PAT):
+
+```bash
+cme config edit auth.confluence
+```
+
+After saving, verify the config was stored:
+
+```bash
+cme config get auth.confluence
+```
+
+For Confluence Cloud, generate an API token in your [Atlassian account settings](https://id.atlassian.com/manage-profile/security/api-tokens). For Confluence Server or Data Center, use a Personal Access Token (PAT).
+
+  </Accordion>
+
+  <Accordion title="Missing attachment file ID on Confluence Server">
+
+**Symptom:** Attachment export fails, attachment links in the Markdown output are broken, or you see an error referencing a missing file ID.
+
+**Cause:** Some Confluence Server versions do not return an attachment file ID in the API response. The default `attachment_path` template uses `{attachment_file_id}`, so missing IDs produce empty or malformed paths.
+
+**Solution:** Switch the attachment path to use a different identifier:
+
+```bash
+# Use the Confluence attachment record ID
+cme config set 'export.attachment_path={space_name}/attachments/{attachment_id}{attachment_extension}'
+
+# Or use the original filename
+cme config set 'export.attachment_path={space_name}/attachments/{attachment_title}'
+```
+
+Verify the result with `cme config get export.attachment_path`.
+
+  </Accordion>
+
+  <Accordion title="Connection issues behind a proxy or VPN">
+
+**Symptom:** cme hangs or fails with a connection error when your Confluence Server is behind a corporate proxy or VPN.
+
+**Cause:** This is a known limitation. cme relies on the `requests` library, which should respect standard proxy environment variables (`HTTP_PROXY`, `HTTPS_PROXY`), but proxy configurations vary and some environments require additional setup.
+
+**Solution:**
+
+1. Ensure your proxy environment variables are set before running cme:
+
+```bash
+export HTTPS_PROXY=http://proxy.company.com:8080
+cme spaces <url>
+```
+
+2. If the issue persists, please report it at [GitHub Issues](https://github.com/Spenhouet/confluence-markdown-exporter/issues) with the output of `cme bugreport`.
+
+  </Accordion>
+
+  <Accordion title="SSL certificate errors">
+
+**Symptom:** cme fails with an SSL verification error such as `SSLError: certificate verify failed`.
+
+**Cause:** The Confluence server's SSL certificate is self-signed, uses an internal CA, or the CA bundle on your machine doesn't include the signing authority.
+
+**Solution:** Disable SSL verification. Use this only on internal networks where you trust the server:
+
+```bash
+cme config set connection_config.verify_ssl=false
+```
+
+<Warning>
+  Disabling SSL verification removes protection against man-in-the-middle attacks. Only use this setting on trusted internal networks and revert it as soon as the certificate issue is resolved.
+</Warning>
+
+  </Accordion>
+
+  <Accordion title="Rate limiting (HTTP 429 errors)">
+
+**Symptom:** Export fails or retries repeatedly with `429 Too Many Requests`.
+
+**Cause:** cme sends requests in parallel (default: 20 workers). High parallelism can exceed Confluence Cloud or Server rate limits.
+
+**Solution:** Reduce the number of parallel workers:
+
+```bash
+cme config set connection_config.max_workers=5
+```
+
+cme also has built-in exponential backoff and retry for 429 responses. You can tune the retry behaviour:
+
+```bash
+cme config set connection_config.max_backoff_retries=10
+cme config set connection_config.max_backoff_seconds=120
+```
+
+<Tip>
+  Start with `max_workers=5` and increase gradually while watching for 429 errors. A value between 5 and 10 works well for most Confluence Cloud instances.
+</Tip>
+
+  </Accordion>
+
+  <Accordion title="Slow exports on large spaces">
+
+**Symptom:** Exporting a large space takes a very long time.
+
+**Solutions:**
+
+1. **Increase parallelism** (if you're not hitting rate limits):
+
+```bash
+cme config set connection_config.max_workers=30
+```
+
+2. **Enable incremental export** (default, but verify it's on):
+
+```bash
+cme config set export.skip_unchanged=true
+```
+
+3. **Cache the lockfile** between runs. When cme finds `confluence-lock.json` from a previous export, it skips pages whose versions haven't changed. In CI, cache this file across pipeline runs. Locally, don't delete it between exports.
+
+  </Accordion>
+
+  <Accordion title="Pages not re-exported after changes">
+
+**Symptom:** You've edited a Confluence page but cme skips it and the local Markdown file is not updated.
+
+**Cause:** The lockfile records the page's version from the last export. If the version number in Confluence matches what's in the lockfile, cme considers the page unchanged and skips it.
+
+**Solution:**
+
+Option A — Delete the lockfile to force a full re-export:
+
+```bash
+rm confluence-lock.json
+```
+
+Option B — Disable skip-unchanged for a single run:
+
+```bash
+CME_EXPORT__SKIP_UNCHANGED=false cme spaces <url>
+```
+
+Option C — Disable skip-unchanged permanently:
+
+```bash
+cme config set export.skip_unchanged=false
+```
+
+  </Accordion>
+
+  <Accordion title="Encoding issues in filenames">
+
+**Symptom:** Exported filenames contain unexpected characters, fail to open on your OS, or don't match the expected format for your target system.
+
+**Cause:** Confluence page titles can include characters that are forbidden or inconvenient on certain filesystems (spaces, colons, slashes, etc.).
+
+**Solution:** Define a custom character mapping:
+
+```bash
+# Example: replace spaces with underscores, colons with dashes
+cme config set 'export.filename_encoding={" ":"_",":":"-"}'
+```
+
+Values are JSON — each key is the original character and each value is its replacement string. For a comprehensive example, see the Azure DevOps configuration in [Understanding the exported file structure](/guides/output-structure).
+
+  </Accordion>
+
+  <Accordion title="Debug mode and verbose logging">
+
+**Symptom:** An export fails or produces unexpected output and you need more information to diagnose the problem.
+
+**Solution:** Run with debug logging enabled to see every API call and conversion step:
+
+```bash
+CME_EXPORT__LOG_LEVEL=DEBUG cme pages <page-url>
+```
+
+You can also target a single page rather than a full space to isolate the issue faster.
+
+<Tip>
+  Redirect debug output to a file for easier searching: `CME_EXPORT__LOG_LEVEL=DEBUG cme pages <url> 2>&1 | tee debug.log`
+</Tip>
+
+  </Accordion>
+
+  <Accordion title="Filing a bug report">
+
+**When to file:** If you've tried the solutions above and the issue persists, or if you've encountered an error that isn't listed here.
+
+**How to file:**
+
+1. Run the built-in bug report command to collect diagnostics:
+
+```bash
+cme bugreport
+```
+
+2. Copy the full output.
+3. Open a new issue at [github.com/Spenhouet/confluence-markdown-exporter/issues](https://github.com/Spenhouet/confluence-markdown-exporter/issues).
+4. Paste the `cme bugreport` output and describe what you expected versus what happened.
+
+<Warning>
+  Review the `cme bugreport` output before posting. Remove any sensitive information such as Confluence URLs, usernames, or API tokens before sharing publicly.
+</Warning>
+
+  </Accordion>
+
+</AccordionGroup>

@@ -1,0 +1,105 @@
+---
+title: "Configure cme output for Obsidian, ADO, and other wikis"
+description: "Adjust cme export settings for Obsidian, Azure DevOps Wikis, and other Markdown platforms to meet their specific formatting and filename requirements."
+---
+
+Different Markdown platforms have different requirements for file structure, link formats, forbidden characters, and metadata. `cme` is configurable to match them. This page covers recommended settings for the most common target systems.
+
+<Tabs>
+  <Tab title="Obsidian">
+    Obsidian natively renders the document title from the filename and displays breadcrumbs in its own UI, so both are disabled to avoid redundant output.
+
+    ```bash
+    cme config set export.include_document_title=false export.page_breadcrumbs=false
+    ```
+
+    **What each setting does:**
+
+    | Setting | Value | Reason |
+    |---|---|---|
+    | `export.include_document_title` | `false` | Obsidian shows the filename as the note title — the H1 heading would be a duplicate |
+    | `export.page_breadcrumbs` | `false` | Obsidian renders its own navigation breadcrumbs |
+
+    No other changes are required for Obsidian. The default relative link style and default path template work well with Obsidian's vault structure.
+  </Tab>
+  <Tab title="Azure DevOps Wikis">
+    Azure DevOps Wikis require absolute attachment links, expect attachments in a `.attachments/` folder at the root, and impose specific restrictions on filenames.
+
+    ```bash
+    cme config set \
+      export.attachment_href=absolute \
+      'export.attachment_path=.attachments/{attachment_file_id}{attachment_extension}' \
+      'export.filename_encoding={" ":"-","\"":"%22","*":"%2A","-":"%2D",":":"%3A","<":"%3C",">":"%3E","?":"%3F","|":"%7C","\\":"_","#":"_","/":"_","\u0000":"_"}' \
+      export.filename_length=200
+    ```
+
+    **What each setting does:**
+
+    | Setting | Value | Reason |
+    |---|---|---|
+    | `export.attachment_href` | `absolute` | ADO Wikis require absolute paths for attachment links to resolve correctly |
+    | `export.attachment_path` | `.attachments/{attachment_file_id}{attachment_extension}` | ADO Wikis expect attachments in a root-level `.attachments/` folder |
+    | `export.filename_encoding` | *(see above)* | Encodes or replaces characters that ADO forbids in filenames: spaces become dashes, dashes are percent-encoded, other forbidden characters become underscores |
+    | `export.filename_length` | `200` | Stays within ADO Wiki filename length limits |
+
+    <Note>
+      The `export.filename_encoding` value must be passed as a single shell argument. Wrap it in single quotes to prevent the shell from interpreting the inner characters.
+    </Note>
+  </Tab>
+  <Tab title="Other platforms">
+    For platforms not listed here, the following options are most commonly adjusted:
+
+    **Use absolute links** when your platform does not support relative Markdown links:
+
+    ```bash
+    cme config set export.page_href=absolute
+    cme config set export.attachment_href=absolute
+    ```
+
+    **Remove the document title** when the platform adds it automatically from the filename:
+
+    ```bash
+    cme config set export.include_document_title=false
+    ```
+
+    **Remove breadcrumbs** when the platform provides its own navigation UI:
+
+    ```bash
+    cme config set export.page_breadcrumbs=false
+    ```
+
+    **Adjust filename encoding** for platforms with specific forbidden characters. The value is a JSON object mapping source characters to replacements:
+
+    ```bash
+    cme config set 'export.filename_encoding={" ":"-","*":"_"}'
+    ```
+
+    **Cap filename length** when the platform enforces shorter limits than the OS default:
+
+    ```bash
+    cme config set export.filename_length=200
+    ```
+
+    To inspect all current settings after making changes:
+
+    ```bash
+    cme config list
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Reset to defaults
+
+If you want to undo platform-specific settings and return to the defaults:
+
+```bash
+cme config reset export
+```
+
+Or reset a single key:
+
+```bash
+cme config reset export.filename_encoding
+```

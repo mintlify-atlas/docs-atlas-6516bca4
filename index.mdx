@@ -1,97 +1,82 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Confluence Markdown Exporter: Export Confluence to Markdown"
+description: "Export Atlassian Confluence pages, spaces, and organizations to Markdown files. Supports Cloud and Server, incremental exports, and CI automation."
 ---
 
-## Setting up
+Confluence Markdown Exporter (`cme`) is a command-line tool that converts Confluence pages into clean Markdown files using the Atlassian REST API. Whether you're migrating content to Obsidian, Azure DevOps Wikis, or any Markdown-based platform, `cme` handles the conversion automatically — including headings, tables, code blocks, images, diagrams, and more.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install `cme` on macOS, Linux, or Windows in seconds
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Configure credentials and run your first export in minutes
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Export commands" icon="terminal" href="/commands/export">
+    Export pages, page trees, spaces, and entire organizations
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Configuration" icon="sliders" href="/configuration/options">
+    Customize output paths, link styles, filenames, and more
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## What you can export
 
-Everything you need to create world-class documentation.
+`cme` supports four export scopes, letting you target exactly what you need:
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+<CardGroup cols={2}>
+  <Card title="Individual pages" icon="file" href="/commands/export#pages">
+    Export one or more pages by URL with `cme pages`
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
+  <Card title="Page trees" icon="sitemap" href="/commands/export#pages-with-descendants">
+    Export a page and all its descendants with `cme pages-with-descendants`
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
+  <Card title="Spaces" icon="layer-group" href="/commands/export#spaces">
+    Export every page in a Confluence space with `cme spaces`
   </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
+  <Card title="Organizations" icon="building" href="/commands/export#orgs">
+    Export all spaces across your entire organization with `cme orgs`
   </Card>
-</Columns>
+</CardGroup>
 
-## Need inspiration?
+## Key features
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+- **Incremental exports** — only re-exports pages that changed since the last run, making repeated exports fast
+- **Parallel processing** — exports multiple pages simultaneously with configurable worker count
+- **Rich element support** — converts tables, code blocks, tasks, alerts, images, draw.io diagrams, and PlantUML
+- **Jira enrichment** — fetches Jira issue data to enrich linked issues with their summaries
+- **Target-system presets** — ready-made configurations for Obsidian, Azure DevOps Wikis, and more
+- **CI-friendly** — clean log output, environment variable overrides, and non-interactive mode
+
+## Get started
+
+<Steps>
+  <Step title="Install cme">
+    Install the exporter using the one-line installer for your platform. See [Installation](/installation) for all options.
+
+    ```bash
+    curl -LsSf uvx.sh/confluence-markdown-exporter/install.sh | sh
+    ```
+  </Step>
+  <Step title="Configure your credentials">
+    Run the interactive configuration menu to add your Confluence URL and API token:
+
+    ```bash
+    cme config edit auth.confluence
+    ```
+  </Step>
+  <Step title="Set your output path">
+    Choose where exported Markdown files will be saved:
+
+    ```bash
+    cme config set export.output_path=./confluence-export
+    ```
+  </Step>
+  <Step title="Run your first export">
+    Export a Confluence space or individual page:
+
+    ```bash
+    cme spaces https://company.atlassian.net/wiki/spaces/MYSPACE
+    ```
+  </Step>
+</Steps>
